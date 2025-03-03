@@ -1,0 +1,56 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{669E17BC-3DDE-48B1-B730-10458E73690F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.OpenSearch.Web", "src\VirtoCommerce.OpenSearch.Web\VirtoCommerce.OpenSearch.Web.csproj", "{B4128D66-9763-4A6E-A9E3-5E290F65FF73}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.OpenSearch.Data", "src\VirtoCommerce.OpenSearch.Data\VirtoCommerce.OpenSearch.Data.csproj", "{8499564B-C8F8-4AF1-9286-9127F1671614}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{5725E15F-8E10-42E2-B1E2-1288BADAE810}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtoCommerce.OpenSearch.Tests", "tests\VirtoCommerce.OpenSearch.Tests\VirtoCommerce.OpenSearch.Tests.csproj", "{C960A124-5E79-4DCA-B5A4-E92CE82474DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8D63538E-EC0A-488B-8210-8B5ADF3F6AA0}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		LICENSE = LICENSE
+		module.ignore = module.ignore
+		README.md = README.md
+		VirtoCommerce.OpenSearch.sln.DotSettings = VirtoCommerce.OpenSearch.sln.DotSettings
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B4128D66-9763-4A6E-A9E3-5E290F65FF73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4128D66-9763-4A6E-A9E3-5E290F65FF73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4128D66-9763-4A6E-A9E3-5E290F65FF73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4128D66-9763-4A6E-A9E3-5E290F65FF73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8499564B-C8F8-4AF1-9286-9127F1671614}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8499564B-C8F8-4AF1-9286-9127F1671614}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8499564B-C8F8-4AF1-9286-9127F1671614}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8499564B-C8F8-4AF1-9286-9127F1671614}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C960A124-5E79-4DCA-B5A4-E92CE82474DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C960A124-5E79-4DCA-B5A4-E92CE82474DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C960A124-5E79-4DCA-B5A4-E92CE82474DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C960A124-5E79-4DCA-B5A4-E92CE82474DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B4128D66-9763-4A6E-A9E3-5E290F65FF73} = {669E17BC-3DDE-48B1-B730-10458E73690F}
+		{8499564B-C8F8-4AF1-9286-9127F1671614} = {669E17BC-3DDE-48B1-B730-10458E73690F}
+		{C960A124-5E79-4DCA-B5A4-E92CE82474DA} = {5725E15F-8E10-42E2-B1E2-1288BADAE810}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B26B3BD3-4243-438B-9889-57C8B6785E97}
+	EndGlobalSection
+EndGlobal
