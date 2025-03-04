@@ -356,7 +356,9 @@ public class OpenSearchRequestBuilder
             termsAggregation = new TermsAggregation(aggregationId)
             {
                 Field = field,
-                Size = facetSize == null ? null : facetSize > 0 ? facetSize : int.MaxValue,
+                Size = facetSize == null
+                        ? null
+                        : facetSize > 0 ? facetSize : int.MaxValue,
             };
 
             if (termAggregationRequest.Values?.Any() == true)

@@ -43,11 +43,11 @@ public class OpenSearchConnectionSettings : ConnectionSettings
             throw new ArgumentException("'Server' parameter must not be empty");
         }
 
-        //if (!server.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-        //    !server.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        //{
-        //    server = "http://" + server;
-        //}
+        if (!server.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+            !server.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            server = "http://" + server;
+        }
 
         server = server.TrimEnd('/');
 
