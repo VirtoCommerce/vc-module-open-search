@@ -1,46 +1,67 @@
-# OpenSearch
+# Virto Commerce OpenSearch Module
 
-## Overview
+[![CI status](https://github.com/VirtoCommerce/vc-module-open-search/workflows/Module%20CI/badge.svg?branch=dev)](https://github.com/VirtoCommerce/vc-module-open-search/actions?query=workflow%3A"Module+CI") [![Quality gate](https://sonarcloud.io/api/project_badges/measure?project=VirtoCommerce_vc-module-open-search&metric=alert_status&branch=dev)](https://sonarcloud.io/dashboard?id=VirtoCommerce_vc-module-open-search) [![Reliability rating](https://sonarcloud.io/api/project_badges/measure?project=VirtoCommerce_vc-module-open-search&metric=reliability_rating&branch=dev)](https://sonarcloud.io/dashboard?id=VirtoCommerce_vc-module-open-search) [![Security rating](https://sonarcloud.io/api/project_badges/measure?project=VirtoCommerce_vc-module-open-search&metric=security_rating&branch=dev)](https://sonarcloud.io/dashboard?id=VirtoCommerce_vc-module-open-search) [![Sqale rating](https://sonarcloud.io/api/project_badges/measure?project=VirtoCommerce_vc-module-open-search&metric=sqale_rating&branch=dev)](https://sonarcloud.io/dashboard?id=VirtoCommerce_vc-module-open-search)
 
-Short overview of what the new module is.
+The Virto Commerce OpenSearch module implements the ISearchProvider defined in the VirtoCommerce Search module. It leverages the OpenSearch engines to store indexed documents.
 
-- What is the new or updated experience?
+The module supports the following OpenSearch deployment options:
 
-- Does this module replace an existing module/experience? If yes, what is the transition plan?
+* [OpenSearch](https://opensearch.org/)
+* [Amazon OpenSearch Service](https://aws.amazon.com/opensearch-service/)
 
-- Does this module has dependency on other ? If yes, list/explain the dependencies.
+## Configuration
+The OpenSearch Search provider can be configured using the following keys:
 
-- List the key deployment scenarios - why would people use this module?
+* **Search.Provider**: Specifies the search provider name, which must be set to "OpenSearch".
+* **Search.Scope**: Specifies the common name (prefix) for all indexes. Each document type is stored in a separate index, and the full index name is scope-{documenttype}. This allows one search service to serve multiple indexes. (Optional: Default value is "default".)
+* **Search.OpenSearch.Server**: Specifies the network address and port of the OpenSearch server.
+* **Search.OpenSearch.User**: Specifies the username for private OpenSearch server. (Optional: Default value is "openSearch".)
+* **Search.OpenSearch.Password**: Specifies the password for either the Elastic Cloud cluster or private OpenSearch server. (Optional)
+* **Search.OpenSearch.EnableHttpCompression**: Set this to "true" to enable gzip compressed requests and responses or "false" (default) to disable compression. (Optional)
 
-## Functional Requirements
+For more information about configuration settings, refer to the [Virto Commerce Configuration Settings documentation](https://virtocommerce.com/docs/user-guide/configuration-settings/).
 
-Short description of the new module functional requirements.
+## Samples
+Here are some sample configurations:
 
-## Scenarios
+### OpenSearch v2.x
+For OpenSearch v2.x without security features enabled:
 
-List of scenarios that the new module implements
+```json
+"Search": {
+    "Provider": "OpenSearch",
+    "Scope": "default",
+    "OpenSearch": {
+        "Server": "https://localhost:9200"
+    }
+}
+```
+For OpenSearch v2.x with ApiKey authorization:
 
-1. [Scenario 1](/doc/scenario-name1.md)
-1. [Scenario 2](/doc/scenario-name2.md)
-1. [Scenario 3](/doc/scenario-name3.md)
-    1. [Scenario 3.1](/doc/scenario-name31.md)
-    1. [Scenario 3.2](/doc/scenario-name32.md)
-1. [Scenario 4](/doc/scenario-name4.md)
+```json
+"Search": {
+    "Provider": "OpenSearch",
+    "Scope": "default",
+    "OpenSearch": {
+        "Server": "https://localhost:9200",
+        "User": "{USER_NAME}",
+        "Password": "{PASSWORD}"
+    }
+}
+```
 
-## Web API
+## Documentation
 
-Web API documentation for each module is built out automatically and can be accessed by following the link bellow:
-<https://link-to-swager-api>
+* [REST API](https://virtostart-demo-admin.govirto.com/docs/index.html?urls.primaryName=VirtoCommerce.Search)
+* [View on GitHub](https://github.com/VirtoCommerce/vc-module-open-search)
 
-## Database Model
+## References
 
-![DB model](./docs/media/diagram-db-model.png)
-
-## Related topics
-
-[Some Article1](some-article1.md)
-
-[Some Article2](some-article2.md)
+* [Deployment](https://docs.virtocommerce.org/platform/developer-guide/Tutorials-and-How-tos/Tutorials/deploy-module-from-source-code/)
+* [Installation](https://docs.virtocommerce.org/platform/user-guide/modules-installation/)
+* [Home](https://virtocommerce.com)
+* [Community](https://www.virtocommerce.org)
+* [Download latest release](https://github.com/VirtoCommerce/vc-module-open-search/releases/latest)
 
 ## License
 
@@ -50,7 +71,7 @@ Licensed under the Virto Commerce Open Software License (the "License"); you
 may not use this file except in compliance with the License. You may
 obtain a copy of the License at
 
-<https://virtocommerce.com/open-source-license>
+http://virtocommerce.com/opensourcelicense
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
