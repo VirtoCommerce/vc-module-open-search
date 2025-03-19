@@ -20,7 +20,7 @@ using SearchRequest = VirtoCommerce.SearchModule.Core.Model.SearchRequest;
 
 namespace VirtoCommerce.OpenSearch.Data
 {
-    public class OpenSearchProvider : ISearchProvider, ISupportIndexSwap, ISupportPartialUpdate, ISupportSuggestions, ISupportIndexCreate
+    public partial class OpenSearchProvider : ISearchProvider, ISupportIndexSwap, ISupportPartialUpdate, ISupportSuggestions, ISupportIndexCreate
     {
         // prefixes for index aliases
         public const string ActiveIndexAlias = "active";
@@ -35,7 +35,7 @@ namespace VirtoCommerce.OpenSearch.Data
         private readonly ConcurrentDictionary<string, IProperties> _mappings = new();
         private readonly SearchOptions _searchOptions;
 
-        private readonly Regex _specialSymbols = new("[/+_=]", RegexOptions.Compiled);
+        private readonly Regex _specialSymbols = SpecialSymbols();
 
         private readonly ILogger<OpenSearchProvider> _logger;
 
@@ -52,10 +52,7 @@ namespace VirtoCommerce.OpenSearch.Data
             OpenSearchRequestBuilder requestBuilder,
             ILogger<OpenSearchProvider> logger)
         {
-            if (searchOptions == null)
-            {
-                throw new ArgumentNullException(nameof(searchOptions));
-            }
+            ArgumentNullException.ThrowIfNull(searchOptions);
 
             SettingsManager = settingsManager;
             Client = openSearchClient;
@@ -407,7 +404,7 @@ namespace VirtoCommerce.OpenSearch.Data
 
                 var request = new SearchRequest
                 {
-                    Sorting = new[] { new SortingField { FieldName = KnownDocumentFields.IndexationDate, IsDescending = true } },
+                    Sorting = [new SortingField { FieldName = KnownDocumentFields.IndexationDate, IsDescending = true }],
                     Take = 1,
                 };
 
@@ -431,10 +428,10 @@ namespace VirtoCommerce.OpenSearch.Data
             {
                 var fieldName = OpenSearchHelper.ToOpenSearchFieldName(field.Name);
 
-                if (result.ContainsKey(fieldName))
+                if (result.TryGetValue(fieldName, out var value))
                 {
                     var newValues = new List<object>();
-                    var currentValue = result[fieldName];
+                    var currentValue = value;
 
                     if (currentValue is object[] currentValues)
                     {
@@ -459,7 +456,6 @@ namespace VirtoCommerce.OpenSearch.Data
                     }
 
                     var isCollection = field.IsCollection || field.Values.Count > 1;
-                    object value;
 
                     if (field.Value is GeoPoint point)
                     {
@@ -864,5 +860,8 @@ namespace VirtoCommerce.OpenSearch.Data
 
             return result;
         }
+
+        [GeneratedRegex("[/+_=]", RegexOptions.Compiled)]
+        private static partial Regex SpecialSymbols();
     }
 }
