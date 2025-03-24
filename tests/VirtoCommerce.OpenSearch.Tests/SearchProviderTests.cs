@@ -113,7 +113,7 @@ namespace VirtoCommerce.OpenSearch.Tests
             var document = response?.Documents?.FirstOrDefault();
             Assert.NotNull(document);
 
-            var stringCollection = document["catalog"] as List<object>;
+            var stringCollection = document["catalog"] as IList<object>;
             Assert.NotNull(stringCollection);
             Assert.Equal(2, stringCollection.Count);
         }

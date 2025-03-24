@@ -42,6 +42,27 @@ public static class OpenSearchResponseBuilder
                     value = jArray.ToObject<object[]>();
                 }
 
+                if (value is List<object> list)
+                {
+                    var convertedList = new List<object>();
+
+                    foreach (var item in list)
+                    {
+                        if (item is IDictionary<string, object>)
+                        {
+                            var jObject = JObject.FromObject(item);
+                            convertedList.Add(jObject);
+                        }
+                        else
+                        {
+                            // Directly add non-dictionary object to JArray
+                            convertedList.Add(item);
+                        }
+                    }
+
+                    value = convertedList.ToArray();
+                }
+
                 if (value is Dictionary<string, object> dictionary)
                 {
                     value = JObject.FromObject(dictionary);
@@ -70,10 +91,9 @@ public static class OpenSearchResponseBuilder
                     Values = new List<AggregationResponseValue>()
                 };
 
-                var termAggregationRequest = aggregationRequest as TermAggregationRequest;
                 var rangeAggregationRequest = aggregationRequest as RangeAggregationRequest;
 
-                if (termAggregationRequest != null)
+                if (aggregationRequest is TermAggregationRequest termAggregationRequest)
                 {
                     AddAggregationValues(aggregation, aggregation.Id, aggregation.Id, searchResponseAggregations);
                 }

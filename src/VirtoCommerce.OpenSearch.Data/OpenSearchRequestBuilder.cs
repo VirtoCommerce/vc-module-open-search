@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenSearch.Client;
@@ -333,7 +334,9 @@ public class OpenSearchRequestBuilder
             }
         }
 
-        return result.Any() ? new AggregationDictionary(result) : null;
+        Array array = result.Values.ToArray();
+
+        return result.Count != 0 ? new AggregationDictionary(result) : null;
     }
 
     protected static bool IsRawKeywordField(string fieldName, IProperties availableFields)
