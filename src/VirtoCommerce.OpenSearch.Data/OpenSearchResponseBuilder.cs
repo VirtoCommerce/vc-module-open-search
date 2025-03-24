@@ -92,7 +92,7 @@ public static class OpenSearchResponseBuilder
 
                 var rangeAggregationRequest = aggregationRequest as RangeAggregationRequest;
 
-                if (aggregationRequest is TermAggregationRequest termAggregationRequest)
+                if (aggregationRequest is TermAggregationRequest)
                 {
                     AddAggregationValues(aggregation, aggregation.Id, aggregation.Id, searchResponseAggregations);
                 }
