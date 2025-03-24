@@ -55,7 +55,6 @@ public static class OpenSearchResponseBuilder
                         }
                         else
                         {
-                            // Directly add non-dictionary object to JArray
                             convertedList.Add(item);
                         }
                     }
