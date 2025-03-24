@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenSearch.Client;
@@ -333,8 +332,6 @@ public class OpenSearchRequestBuilder
                 }
             }
         }
-
-        Array array = result.Values.ToArray();
 
         return result.Count != 0 ? new AggregationDictionary(result) : null;
     }
