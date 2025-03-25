@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<module>
+  <id>VirtoCommerce.OpenSearch</id>
+  <version>3.800.0</version>
+  <version-tag></version-tag>
+
+  <platformVersion>3.876.0</platformVersion>
+  <dependencies>
+    <dependency id="VirtoCommerce.Search" version="3.807.0" />
+  </dependencies>
+
+  <title>VirtoCommerce OpenSearch module</title>
+  <description>VirtoCommerce OpenSearch module</description>
+
+  <authors>
+    <author>Okhrimenko Evgeny</author>
+  </authors>
+  <owners>
+    <owner>VirtoCommerce</owner>
+  </owners>
+
+  <projectUrl>https://github.com/VirtoCommerce/vc-module-open-search</projectUrl>
+  <iconUrl>Modules/$(VirtoCommerce.OpenSearch)/Content/logo.png</iconUrl>
+  <requireLicenseAcceptance>false</requireLicenseAcceptance>
+
+  <assemblyFile>VirtoCommerce.OpenSearch.Web.dll</assemblyFile>
+  <moduleType>VirtoCommerce.OpenSearch.Web.Module, VirtoCommerce.OpenSearch.Web</moduleType>
+
+  <releaseNotes>First version.</releaseNotes>
+  <copyright>Copyright © 2025 VirtoCommerce. All rights reserved</copyright>
+  <tags>extension module</tags>
+  <useFullTypeNameInSwagger>false</useFullTypeNameInSwagger>
+</module>
