@@ -9,8 +9,8 @@
     <dependency id="VirtoCommerce.Search" version="3.807.0" />
   </dependencies>
 
-  <title>VirtoCommerce OpenSearch module</title>
-  <description>VirtoCommerce OpenSearch module</description>
+  <title>Open Search</title>
+  <description>Indexed search functionality with OpenSearch</description>
 
   <authors>
     <author>Okhrimenko Evgeny</author>
