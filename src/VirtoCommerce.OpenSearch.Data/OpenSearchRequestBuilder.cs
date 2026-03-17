@@ -25,7 +25,7 @@ public class OpenSearchRequestBuilder
             result.Sort = GetSorting(request.Sorting);
             result.From = request.Skip;
             result.Size = request.Take;
-            result.TrackScores = request.Sorting?.Any(x => x.FieldName.EqualsInvariant(Score)) ?? false;
+            result.TrackScores = request.Sorting?.Any(x => x.FieldName.EqualsIgnoreCase(Score)) ?? false;
 
             if (request.IncludeFields?.Any() == true)
             {
@@ -95,7 +95,7 @@ public class OpenSearchRequestBuilder
                 Order = geoSorting.IsDescending ? SortOrder.Descending : SortOrder.Ascending,
             };
         }
-        else if (field.FieldName.EqualsInvariant(Score))
+        else if (field.FieldName.EqualsIgnoreCase(Score))
         {
             result = new FieldSort
             {
@@ -189,8 +189,8 @@ public class OpenSearchRequestBuilder
     {
         var termValues = termFilter.Values;
 
-        var field = availableFields.Where(kvp => kvp.Key.Name.EqualsInvariant(termFilter.FieldName)).Select(kvp => kvp.Value).FirstOrDefault();
-        if (field?.Type?.EqualsInvariant(FieldType.Boolean.ToString()) == true)
+        var field = availableFields.Where(kvp => kvp.Key.Name.EqualsIgnoreCase(termFilter.FieldName)).Select(kvp => kvp.Value).FirstOrDefault();
+        if (field?.Type?.EqualsIgnoreCase(FieldType.Boolean.ToString()) == true)
         {
             termValues = termValues.Select(v => v switch
             {
@@ -340,7 +340,7 @@ public class OpenSearchRequestBuilder
     {
         return availableFields
             .Any(kvp =>
-                kvp.Key.Name.EqualsInvariant(fieldName) &&
+                kvp.Key.Name.EqualsIgnoreCase(fieldName) &&
                 kvp.Value is KeywordProperty keywordProperty &&
                 keywordProperty.Fields?.ContainsKey("raw") == true);
     }

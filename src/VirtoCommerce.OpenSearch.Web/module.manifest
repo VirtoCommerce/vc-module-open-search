@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <module>
   <id>VirtoCommerce.OpenSearch</id>
-  <version>3.802.0</version>
+  <version>3.1000.0</version>
   <version-tag></version-tag>
 
-  <platformVersion>3.876.0</platformVersion>
+  <platformVersion>3.1002.0</platformVersion>
   <dependencies>
-    <dependency id="VirtoCommerce.Search" version="3.807.0" />
+    <dependency id="VirtoCommerce.Search" version="3.1000.0" />
   </dependencies>
 
   <title>Open Search</title>
@@ -27,7 +27,7 @@
   <moduleType>VirtoCommerce.OpenSearch.Web.Module, VirtoCommerce.OpenSearch.Web</moduleType>
 
   <releaseNotes>First version.</releaseNotes>
-  <copyright>Copyright © 2025 VirtoCommerce. All rights reserved</copyright>
+  <copyright>Copyright © 2025-2026 VirtoCommerce. All rights reserved</copyright>
   <tags>extension module</tags>
   <useFullTypeNameInSwagger>false</useFullTypeNameInSwagger>
 </module>
