@@ -20,7 +20,7 @@
   </owners>
 
   <projectUrl>https://github.com/VirtoCommerce/vc-module-open-search</projectUrl>
-  <iconUrl>Modules/$(VirtoCommerce.OpenSearch)/Content/logo.png</iconUrl>
+  <iconUrl>Modules/$(VirtoCommerce.OpenSearch)/Content/logo.svg</iconUrl>
   <requireLicenseAcceptance>false</requireLicenseAcceptance>
 
   <assemblyFile>VirtoCommerce.OpenSearch.Web.dll</assemblyFile>
