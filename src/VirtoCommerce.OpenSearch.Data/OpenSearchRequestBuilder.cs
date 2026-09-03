@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenSearch.Client;
+using OpenSearch.Net;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.SearchModule.Core.Model;
 using OpenSearchRequest = OpenSearch.Client.SearchRequest;
 using SearchRequest = VirtoCommerce.SearchModule.Core.Model.SearchRequest;
 
 namespace VirtoCommerce.OpenSearch.Data;
+
 public class OpenSearchRequestBuilder
 {
     protected const string Score = "score";
@@ -91,7 +93,7 @@ public class OpenSearchRequestBuilder
             result = new GeoDistanceSort
             {
                 Field = OpenSearchHelper.ToOpenSearchFieldName(field.FieldName),
-                Points = new[] { geoSorting.Location.ToGeoLocation() },
+                Points = [geoSorting.Location.ToGeoLocation()],
                 Order = geoSorting.IsDescending ? SortOrder.Descending : SortOrder.Ascending,
             };
         }
