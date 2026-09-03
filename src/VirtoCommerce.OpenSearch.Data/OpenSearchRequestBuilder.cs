@@ -1,12 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenSearch.Client;
+using OpenSearch.Net;
 using VirtoCommerce.Platform.Core.Common;
 using VirtoCommerce.SearchModule.Core.Model;
 using OpenSearchRequest = OpenSearch.Client.SearchRequest;
 using SearchRequest = VirtoCommerce.SearchModule.Core.Model.SearchRequest;
 
 namespace VirtoCommerce.OpenSearch.Data;
+
 public class OpenSearchRequestBuilder
 {
     protected const string Score = "score";
@@ -91,7 +93,7 @@ public class OpenSearchRequestBuilder
             result = new GeoDistanceSort
             {
                 Field = OpenSearchHelper.ToOpenSearchFieldName(field.FieldName),
-                Points = new[] { geoSorting.Location.ToGeoLocation() },
+                Points = [geoSorting.Location.ToGeoLocation()],
                 Order = geoSorting.IsDescending ? SortOrder.Descending : SortOrder.Ascending,
             };
         }
@@ -409,5 +411,26 @@ public class OpenSearchRequestBuilder
 
             container.Add(aggregationValueId, filterAggregation);
         }
+
+        AddStatsAggregationRequest(container, aggregationId, fieldName, filter);
+    }
+
+    /// <summary>
+    /// Adds min/max statistics for the whole field. Consumers such as the storefront price slider need these bounds,
+    /// which cannot be derived from the range buckets alone.
+    /// </summary>
+    protected virtual void AddStatsAggregationRequest(Dictionary<string, AggregationContainer> container, string aggregationId, string fieldName, QueryContainer filter)
+    {
+        var statsAggregationId = OpenSearchHelper.ToStatsAggregationId(aggregationId);
+
+        var statsAggregation = new FilterAggregation(statsAggregationId)
+        {
+            // Unlike the range buckets there is no second clause to combine with, and a bool query wrapping
+            // a null filter serializes to an empty clause, which OpenSearch rejects.
+            Filter = filter ?? new MatchAllQuery(),
+            Aggregations = new StatsAggregation(OpenSearchHelper.StatsAggregationName, fieldName),
+        };
+
+        container.Add(statsAggregationId, statsAggregation);
     }
 }

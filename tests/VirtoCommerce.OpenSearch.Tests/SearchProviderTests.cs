@@ -265,6 +265,27 @@ namespace VirtoCommerce.OpenSearch.Tests
         }
 
         [Fact]
+        public virtual async Task CanSearchByKeywordLongerThanMaxGram()
+        {
+            var provider = GetSearchProvider();
+
+            // "item_1_sales_department" is a single token of 23 characters. Searchable content is indexed with an
+            // edge n-gram filter, but the keyword query is analyzed with the plain "standard" analyzer, so a token
+            // longer than MaxGram never gets indexed in full and becomes unmatchable.
+            var request = new SearchRequest
+            {
+                SearchKeywords = "item_1_sales_department@example.com",
+                SearchFields = new[] { ContentFieldName },
+                Take = 10,
+            };
+
+            var response = await provider.SearchAsync(DocumentType, request);
+
+            Assert.Equal(1, response.DocumentsCount);
+            Assert.Equal("Item-1", response.Documents.First().Id);
+        }
+
+        [Fact]
         public virtual async Task CanFilterByIds()
         {
             var provider = GetSearchProvider();
@@ -980,6 +1001,73 @@ namespace VirtoCommerce.OpenSearch.Tests
 
             var size5To10Count = GetAggregationValueCount(response, "Size", "5_to_20");
             Assert.Equal(2, size5To10Count);
+        }
+
+        [Fact]
+        public virtual async Task CanGetRangeFacetStatistics()
+        {
+            var provider = GetSearchProvider();
+
+            var request = new SearchRequest
+            {
+                Aggregations = new AggregationRequest[]
+                {
+                    new RangeAggregationRequest
+                    {
+                        FieldName = "Price_USD",
+                        Values = new[]
+                        {
+                            new RangeAggregationRequestValue { Id = "under_100", Lower = null, Upper = "100" },
+                            new RangeAggregationRequestValue { Id = "over_100", Lower = "100", Upper = null },
+                        }
+                    },
+                }
+            };
+
+            var response = await provider.SearchAsync(DocumentType, request);
+
+            // Min and max of the whole range are what a price slider needs to render its bounds
+            var aggregation = GetAggregation(response, "Price_USD");
+            Assert.NotNull(aggregation);
+            Assert.NotNull(aggregation.Statistics);
+            Assert.Equal(10d, aggregation.Statistics.Min);
+            Assert.Equal(700d, aggregation.Statistics.Max);
+        }
+
+        [Fact]
+        public virtual async Task CanGetRangeFacetStatisticsWithFilter()
+        {
+            var provider = GetSearchProvider();
+
+            var request = new SearchRequest
+            {
+                Aggregations = new AggregationRequest[]
+                {
+                    new RangeAggregationRequest
+                    {
+                        FieldName = "Price_USD",
+                        Filter = new TermFilter
+                        {
+                            FieldName = "Color",
+                            Values = new[] { "Red" }
+                        },
+                        Values = new[]
+                        {
+                            new RangeAggregationRequestValue { Id = "under_100", Lower = null, Upper = "100" },
+                            new RangeAggregationRequestValue { Id = "over_100", Lower = "100", Upper = null },
+                        }
+                    },
+                }
+            };
+
+            var response = await provider.SearchAsync(DocumentType, request);
+
+            // Red items are priced 10, 99, 123.23 and 200, so the bounds must follow the aggregation filter
+            var aggregation = GetAggregation(response, "Price_USD");
+            Assert.NotNull(aggregation);
+            Assert.NotNull(aggregation.Statistics);
+            Assert.Equal(10d, aggregation.Statistics.Min);
+            Assert.Equal(200d, aggregation.Statistics.Max);
         }
 
         [Fact]
