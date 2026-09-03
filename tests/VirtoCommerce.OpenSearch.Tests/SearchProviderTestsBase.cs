@@ -24,6 +24,7 @@ namespace VirtoCommerce.OpenSearch.Tests
             schema.AddFilterableString("Code");
             schema.AddFilterableInteger("Size");
             schema.AddFilterableDateTime("Date");
+            schema.AddFilterableCollectionAndContentString("Email");
             schema.AddFilterableCollection("Catalog");
             schema.AddFilterableCollection("Is");
             schema.AddFilterableBoolean("HasMultiplePrices");
@@ -71,6 +72,9 @@ namespace VirtoCommerce.OpenSearch.Tests
             doc.AddFilterableInteger("Size", size);
             doc.AddFilterableDateTime("Date", DateTime.Parse(date));
             doc.Add(new IndexDocumentField("Location", GeoPoint.TryParse(location), IndexDocumentFieldValueType.GeoPoint) { IsRetrievable = true, IsFilterable = true });
+
+            // The local part is a single token longer than the default edge n-gram MaxGram
+            doc.AddFilterableCollectionAndContentString("Email", $"{id.Replace("-", "_").ToLowerInvariant()}_sales_department@example.com");
 
             doc.AddFilterableCollection("Catalog", "Goods");
             doc.AddFilterableCollection("Catalog", "Stuff");

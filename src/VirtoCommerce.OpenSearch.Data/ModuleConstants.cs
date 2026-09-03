@@ -40,7 +40,7 @@ public static class ModuleConstants
                 Name = "VirtoCommerce.Search.OpenSearch.NGramTokenFilter.MaxGram",
                 GroupName = "Search|OpenSearch",
                 ValueType = SettingValueType.Integer,
-                DefaultValue = 20,
+                DefaultValue = 50,
             };
 
             public static SettingDescriptor DeleteDuplicateIndexes { get; } = new()

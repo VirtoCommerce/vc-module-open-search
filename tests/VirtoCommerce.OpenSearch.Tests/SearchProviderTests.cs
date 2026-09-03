@@ -265,6 +265,27 @@ namespace VirtoCommerce.OpenSearch.Tests
         }
 
         [Fact]
+        public virtual async Task CanSearchByKeywordLongerThanMaxGram()
+        {
+            var provider = GetSearchProvider();
+
+            // "item_1_sales_department" is a single token of 23 characters. Searchable content is indexed with an
+            // edge n-gram filter, but the keyword query is analyzed with the plain "standard" analyzer, so a token
+            // longer than MaxGram never gets indexed in full and becomes unmatchable.
+            var request = new SearchRequest
+            {
+                SearchKeywords = "item_1_sales_department@example.com",
+                SearchFields = new[] { ContentFieldName },
+                Take = 10,
+            };
+
+            var response = await provider.SearchAsync(DocumentType, request);
+
+            Assert.Equal(1, response.DocumentsCount);
+            Assert.Equal("Item-1", response.Documents.First().Id);
+        }
+
+        [Fact]
         public virtual async Task CanFilterByIds()
         {
             var provider = GetSearchProvider();
