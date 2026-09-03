@@ -5,9 +5,22 @@ using VirtoCommerce.SearchModule.Core.Model;
 namespace VirtoCommerce.OpenSearch.Data;
 public static class OpenSearchHelper
 {
+    /// <summary>
+    /// Name of the sub-aggregation holding the min/max statistics of a range aggregation.
+    /// </summary>
+    public const string StatsAggregationName = "stats";
+
     public static string ToOpenSearchFieldName(string originalName)
     {
         return originalName?.ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Key of the aggregation wrapping <see cref="StatsAggregationName"/>. The request and response builders must agree on it.
+    /// </summary>
+    public static string ToStatsAggregationId(string aggregationId)
+    {
+        return $"{aggregationId}-{StatsAggregationName}";
     }
 
     public static string ToStringInvariant(this object value)

@@ -1004,6 +1004,73 @@ namespace VirtoCommerce.OpenSearch.Tests
         }
 
         [Fact]
+        public virtual async Task CanGetRangeFacetStatistics()
+        {
+            var provider = GetSearchProvider();
+
+            var request = new SearchRequest
+            {
+                Aggregations = new AggregationRequest[]
+                {
+                    new RangeAggregationRequest
+                    {
+                        FieldName = "Price_USD",
+                        Values = new[]
+                        {
+                            new RangeAggregationRequestValue { Id = "under_100", Lower = null, Upper = "100" },
+                            new RangeAggregationRequestValue { Id = "over_100", Lower = "100", Upper = null },
+                        }
+                    },
+                }
+            };
+
+            var response = await provider.SearchAsync(DocumentType, request);
+
+            // Min and max of the whole range are what a price slider needs to render its bounds
+            var aggregation = GetAggregation(response, "Price_USD");
+            Assert.NotNull(aggregation);
+            Assert.NotNull(aggregation.Statistics);
+            Assert.Equal(10d, aggregation.Statistics.Min);
+            Assert.Equal(700d, aggregation.Statistics.Max);
+        }
+
+        [Fact]
+        public virtual async Task CanGetRangeFacetStatisticsWithFilter()
+        {
+            var provider = GetSearchProvider();
+
+            var request = new SearchRequest
+            {
+                Aggregations = new AggregationRequest[]
+                {
+                    new RangeAggregationRequest
+                    {
+                        FieldName = "Price_USD",
+                        Filter = new TermFilter
+                        {
+                            FieldName = "Color",
+                            Values = new[] { "Red" }
+                        },
+                        Values = new[]
+                        {
+                            new RangeAggregationRequestValue { Id = "under_100", Lower = null, Upper = "100" },
+                            new RangeAggregationRequestValue { Id = "over_100", Lower = "100", Upper = null },
+                        }
+                    },
+                }
+            };
+
+            var response = await provider.SearchAsync(DocumentType, request);
+
+            // Red items are priced 10, 99, 123.23 and 200, so the bounds must follow the aggregation filter
+            var aggregation = GetAggregation(response, "Price_USD");
+            Assert.NotNull(aggregation);
+            Assert.NotNull(aggregation.Statistics);
+            Assert.Equal(10d, aggregation.Statistics.Min);
+            Assert.Equal(200d, aggregation.Statistics.Max);
+        }
+
+        [Fact]
         public virtual async Task CanGetAllFacetValuesWhenRequestFilterIsApplied()
         {
             var provider = GetSearchProvider();

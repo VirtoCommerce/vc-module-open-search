@@ -104,6 +104,8 @@ public static class OpenSearchResponseBuilder
                         var responseValueId = $"{aggregation.Id}-{queryValueId}";
                         AddAggregationValues(aggregation, responseValueId, queryValueId, searchResponseAggregations);
                     }
+
+                    TryAddAggregationStatistics(aggregation, searchResponseAggregations);
                 }
 
                 if (aggregation.Values.Any())
@@ -114,6 +116,22 @@ public static class OpenSearchResponseBuilder
         }
 
         return result;
+    }
+
+    private static void TryAddAggregationStatistics(AggregationResponse aggregation, IReadOnlyDictionary<string, IAggregate> searchResponseAggregations)
+    {
+        var statsAggregationId = OpenSearchHelper.ToStatsAggregationId(aggregation.Id);
+
+        if (searchResponseAggregations.TryGetValue(statsAggregationId, out var aggregate) &&
+            aggregate is SingleBucketAggregate singleBucketAggregate &&
+            singleBucketAggregate.Stats(OpenSearchHelper.StatsAggregationName) is { } stats)
+        {
+            aggregation.Statistics = new AggregationStatistics
+            {
+                Min = stats.Min,
+                Max = stats.Max,
+            };
+        }
     }
 
     private static void AddAggregationValues(AggregationResponse aggregation, string responseKey, string valueId, IReadOnlyDictionary<string, IAggregate> searchResponseAggregations)
