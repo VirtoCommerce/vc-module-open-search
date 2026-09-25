@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using OpenSearch.Client;
 using VirtoCommerce.OpenSearch.Data;
 using VirtoCommerce.Platform.Core.Common;
+using VirtoCommerce.Platform.Core.DistributedLock;
 using VirtoCommerce.Platform.Core.Settings;
 using VirtoCommerce.SearchModule.Core.Model;
 using VirtoCommerce.SearchModule.Core.Services;
@@ -52,7 +53,7 @@ namespace VirtoCommerce.OpenSearch.Tests
             var loggerFactory = LoggerFactory.Create(builder => { builder.ClearProviders(); });
             var logger = loggerFactory.CreateLogger<TestOpenSearchProvider>();
 
-            var provider = new TestOpenSearchProvider(searchOptions, GetSettingsManager(), client, new OpenSearchRequestBuilder(), logger);
+            var provider = new TestOpenSearchProvider(searchOptions, GetSettingsManager(), client, new OpenSearchRequestBuilder(), logger, new PassThroughDistributedLockService());
 
             return provider;
         }
@@ -68,8 +69,9 @@ namespace VirtoCommerce.OpenSearch.Tests
                 ISettingsManager settingsManager,
                 IOpenSearchClient client,
                 OpenSearchRequestBuilder requestBuilder,
-                ILogger<TestOpenSearchProvider> logger)
-                : base(searchOptions, settingsManager, client, requestBuilder, logger)
+                ILogger<TestOpenSearchProvider> logger,
+                IDistributedLockService distributedLockService)
+                : base(searchOptions, settingsManager, client, requestBuilder, logger, distributedLockService)
             {
             }
 
