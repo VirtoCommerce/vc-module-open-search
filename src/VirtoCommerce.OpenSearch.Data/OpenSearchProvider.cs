@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenSearch.Client;
 using VirtoCommerce.OpenSearch.Data.Extensions;
 using VirtoCommerce.Platform.Core.Common;
+using VirtoCommerce.Platform.Core.DistributedLock;
 using VirtoCommerce.Platform.Core.Settings;
 using VirtoCommerce.SearchModule.Core.Exceptions;
 using VirtoCommerce.SearchModule.Core.Model;
@@ -31,13 +33,20 @@ namespace VirtoCommerce.OpenSearch.Data
         public const string EdgeNGramFilterName = "custom_edge_ngram";
 
         private const string _exceptionTitle = "OpenSearch Server";
+        private const string _indexNotFoundErrorType = "index_not_found_exception";
+
+        private static readonly TimeSpan _createIndexLockTimeout = TimeSpan.FromSeconds(30);
+        private static readonly TimeSpan _createIndexTryLockTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan _createIndexRetryInterval = TimeSpan.FromMilliseconds(200);
 
         private readonly ConcurrentDictionary<string, IProperties> _mappings = new();
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _createIndexSemaphores = new(StringComparer.OrdinalIgnoreCase);
         private readonly SearchOptions _searchOptions;
 
         private readonly Regex _specialSymbols = SpecialSymbols();
 
         private readonly ILogger<OpenSearchProvider> _logger;
+        private readonly IDistributedLockService _distributedLockService;
 
         /// <summary>
         /// Added to a suggestable field to enable completion suggestion queries (IsSuggestable == true)
@@ -45,12 +54,24 @@ namespace VirtoCommerce.OpenSearch.Data
         protected const string CompletionSubFieldName = "completion";
         protected const int SuggestionFieldLength = 256;
 
+        [Obsolete("Use the constructor with IDistributedLockService. Without it, index creation is serialized only within the current process.")]
         public OpenSearchProvider(
             IOptions<SearchOptions> searchOptions,
             ISettingsManager settingsManager,
             IOpenSearchClient openSearchClient,
             OpenSearchRequestBuilder requestBuilder,
             ILogger<OpenSearchProvider> logger)
+            : this(searchOptions, settingsManager, openSearchClient, requestBuilder, logger, distributedLockService: null)
+        {
+        }
+
+        public OpenSearchProvider(
+            IOptions<SearchOptions> searchOptions,
+            ISettingsManager settingsManager,
+            IOpenSearchClient openSearchClient,
+            OpenSearchRequestBuilder requestBuilder,
+            ILogger<OpenSearchProvider> logger,
+            IDistributedLockService distributedLockService)
         {
             ArgumentNullException.ThrowIfNull(searchOptions);
 
@@ -60,6 +81,7 @@ namespace VirtoCommerce.OpenSearch.Data
             ServerUrl = Client.ConnectionSettings.ConnectionPool.Nodes.First().Uri;
             _searchOptions = searchOptions.Value;
             _logger = logger;
+            _distributedLockService = distributedLockService;
         }
 
         protected IOpenSearchClient Client { get; }
@@ -74,6 +96,12 @@ namespace VirtoCommerce.OpenSearch.Data
                 throw new ArgumentNullException(nameof(documentType));
             }
 
+            // Swap may create the active index, so it shares the index creation lock
+            await ExecuteWithCreateIndexLockAsync(documentType, () => InternalSwapIndexAsync(documentType));
+        }
+
+        protected virtual async Task InternalSwapIndexAsync(string documentType)
+        {
             // get active index and alias
             var activeIndexAlias = GetIndexAlias(ActiveIndexAlias, documentType);
 
@@ -133,7 +161,7 @@ namespace VirtoCommerce.OpenSearch.Data
 
         public async Task CreateIndexAsync(string documentType, IndexDocument schema)
         {
-            await InternalCreateIndexAsync(documentType, new[] { schema }, new IndexingParameters { Reindex = true });
+            await InternalCreateIndexWithLockAsync(documentType, new[] { schema }, new IndexingParameters { Reindex = true });
         }
 
         public virtual async Task<IndexingResult> IndexWithBackupAsync(string documentType, IList<IndexDocument> documents)
@@ -170,9 +198,17 @@ namespace VirtoCommerce.OpenSearch.Data
                 if (indexName != null)
                 {
                     var response = await Client.Indices.DeleteAsync(indexName);
-                    if (!response.IsValid && response.ApiCall.HttpStatusCode != (int)HttpStatusCode.NotFound)
+                    if (!response.IsValid)
                     {
-                        throw new SearchException(response.DebugInformation);
+                        // Index not found is normal here: the index may be already deleted
+                        if (IsIndexNotFoundError(response))
+                        {
+                            _logger.LogInformation("Index {IndexName} not found while trying to delete it. It may be already deleted.", indexName);
+                        }
+                        else
+                        {
+                            throw new SearchException(response.DebugInformation);
+                        }
                     }
                 }
 
@@ -231,9 +267,16 @@ namespace VirtoCommerce.OpenSearch.Data
                 throw new SearchException(ex.Message, ex);
             }
 
-            if (!providerResponse.IsValid && providerResponse.ApiCall.HttpStatusCode != (int)HttpStatusCode.NotFound)
+            if (!providerResponse.IsValid)
             {
-                ThrowException(providerResponse.DebugInformation, null);
+                // Index not found is normal when the index was not created yet or was deleted
+                if (IsIndexNotFoundError(providerResponse))
+                {
+                    _logger.LogWarning("Index {IndexName} not found while trying to search. Returning empty result. Possible cause - index was not created yet or was deleted.", indexName);
+                    return AbstractTypeFactory<SearchResponse>.TryCreateInstance();
+                }
+
+                ThrowException(providerResponse.DebugInformation, providerResponse.OriginalException);
             }
 
             var result = providerResponse.ToSearchResponse(request);
@@ -308,9 +351,16 @@ namespace VirtoCommerce.OpenSearch.Data
                 throw new SearchException(ex.Message, ex);
             }
 
-            if (!providerResponse.IsValid && providerResponse.ApiCall.HttpStatusCode != (int)HttpStatusCode.NotFound)
+            if (!providerResponse.IsValid)
             {
-                ThrowException(providerResponse.DebugInformation, null);
+                // Index not found is normal when the index was not created yet or was deleted
+                if (IsIndexNotFoundError(providerResponse))
+                {
+                    _logger.LogWarning("Index {IndexName} not found while trying to get suggestions. Returning empty result.", indexName);
+                    return result;
+                }
+
+                ThrowException(providerResponse.DebugInformation, providerResponse.OriginalException);
             }
 
             foreach (var field in request.Fields.Where(field => providerResponse.Suggest.ContainsKey(field)))
@@ -329,7 +379,7 @@ namespace VirtoCommerce.OpenSearch.Data
 
         protected virtual async Task<IndexingResult> InternalIndexAsync(string documentType, IList<IndexDocument> documents, IndexingParameters parameters)
         {
-            var (indexName, providerDocuments) = await InternalCreateIndexAsync(documentType, documents, parameters);
+            var (indexName, providerDocuments) = await InternalCreateIndexWithLockAsync(documentType, documents, parameters);
 
             var bulkDescriptor = parameters.PartialUpdate
                 ? new BulkDescriptor().Index(indexName).UpdateMany(providerDocuments, (descriptor, document) => descriptor.Doc(document))
@@ -358,6 +408,64 @@ namespace VirtoCommerce.OpenSearch.Data
             }));
 
             return result;
+        }
+
+        protected virtual bool IsIndexNotFoundError(IResponse response)
+        {
+            return !response.IsValid &&
+                response.ApiCall?.HttpStatusCode == (int)HttpStatusCode.NotFound &&
+                response.ServerError?.Error?.Type == _indexNotFoundErrorType;
+        }
+
+        /// <summary>
+        /// Serializes index creation per document type, so concurrent indexing calls can't create several indexes under the same alias
+        /// </summary>
+        protected virtual Task<(string indexName, IList<SearchDocument> providerDocuments)> InternalCreateIndexWithLockAsync(
+            string documentType,
+            IList<IndexDocument> documents,
+            IndexingParameters parameters)
+        {
+            return ExecuteWithCreateIndexLockAsync(documentType, () => InternalCreateIndexAsync(documentType, documents, parameters));
+        }
+
+        protected virtual async Task ExecuteWithCreateIndexLockAsync(string documentType, Func<Task> action)
+        {
+            await ExecuteWithCreateIndexLockAsync(documentType, async () =>
+            {
+                await action();
+                return true;
+            });
+        }
+
+        protected virtual async Task<T> ExecuteWithCreateIndexLockAsync<T>(string documentType, Func<Task<T>> resolver)
+        {
+            var semaphore = _createIndexSemaphores.GetOrAdd(documentType, static _ => new SemaphoreSlim(1, 1));
+
+            await semaphore.WaitAsync();
+
+            try
+            {
+                if (_distributedLockService is null)
+                {
+                    return await resolver();
+                }
+
+                return await _distributedLockService.ExecuteAsync(
+                    GetCreateIndexLockResourceKey(documentType),
+                    resolver,
+                    lockTimeout: _createIndexLockTimeout,
+                    tryLockTimeout: _createIndexTryLockTimeout,
+                    retryInterval: _createIndexRetryInterval);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        }
+
+        protected virtual string GetCreateIndexLockResourceKey(string documentType)
+        {
+            return $"{nameof(OpenSearchProvider)}:CreateIndex:{GetIndexName(documentType)}";
         }
 
         protected virtual async Task<(string indexName, IList<SearchDocument> providerDocuments)> InternalCreateIndexAsync(
