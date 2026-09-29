@@ -35,9 +35,8 @@ namespace VirtoCommerce.OpenSearch.Data
         private const string _exceptionTitle = "OpenSearch Server";
         private const string _indexNotFoundErrorType = "index_not_found_exception";
 
-        private static readonly TimeSpan _createIndexLockTimeout = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan _createIndexTryLockTimeout = TimeSpan.FromSeconds(10);
-        private static readonly TimeSpan _createIndexRetryInterval = TimeSpan.FromMilliseconds(200);
+        // How long index creation waits for another instance that is creating the same index.
+        private static readonly TimeSpan _createIndexLockWait = TimeSpan.FromSeconds(10);
 
         private readonly ConcurrentDictionary<string, IProperties> _mappings = new();
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _createIndexSemaphores = new(StringComparer.OrdinalIgnoreCase);
@@ -46,7 +45,7 @@ namespace VirtoCommerce.OpenSearch.Data
         private readonly Regex _specialSymbols = SpecialSymbols();
 
         private readonly ILogger<OpenSearchProvider> _logger;
-        private readonly IDistributedLockService _distributedLockService;
+        private readonly IDistributedLock _distributedLock;
 
         /// <summary>
         /// Added to a suggestable field to enable completion suggestion queries (IsSuggestable == true)
@@ -54,14 +53,14 @@ namespace VirtoCommerce.OpenSearch.Data
         protected const string CompletionSubFieldName = "completion";
         protected const int SuggestionFieldLength = 256;
 
-        [Obsolete("Use the constructor with IDistributedLockService. Without it, index creation is serialized only within the current process.")]
+        [Obsolete("Use the constructor with IDistributedLock. Without it, index creation is serialized only within the current process.")]
         public OpenSearchProvider(
             IOptions<SearchOptions> searchOptions,
             ISettingsManager settingsManager,
             IOpenSearchClient openSearchClient,
             OpenSearchRequestBuilder requestBuilder,
             ILogger<OpenSearchProvider> logger)
-            : this(searchOptions, settingsManager, openSearchClient, requestBuilder, logger, distributedLockService: null)
+            : this(searchOptions, settingsManager, openSearchClient, requestBuilder, logger, distributedLock: null)
         {
         }
 
@@ -71,7 +70,7 @@ namespace VirtoCommerce.OpenSearch.Data
             IOpenSearchClient openSearchClient,
             OpenSearchRequestBuilder requestBuilder,
             ILogger<OpenSearchProvider> logger,
-            IDistributedLockService distributedLockService)
+            IDistributedLock distributedLock)
         {
             ArgumentNullException.ThrowIfNull(searchOptions);
 
@@ -81,7 +80,7 @@ namespace VirtoCommerce.OpenSearch.Data
             ServerUrl = Client.ConnectionSettings.ConnectionPool.Nodes.First().Uri;
             _searchOptions = searchOptions.Value;
             _logger = logger;
-            _distributedLockService = distributedLockService;
+            _distributedLock = distributedLock;
         }
 
         protected IOpenSearchClient Client { get; }
@@ -445,17 +444,15 @@ namespace VirtoCommerce.OpenSearch.Data
 
             try
             {
-                if (_distributedLockService is null)
+                if (_distributedLock is null)
                 {
                     return await resolver();
                 }
 
-                return await _distributedLockService.ExecuteAsync(
+                return await _distributedLock.ExecuteAsync(
                     GetCreateIndexLockResourceKey(documentType),
-                    resolver,
-                    lockTimeout: _createIndexLockTimeout,
-                    tryLockTimeout: _createIndexTryLockTimeout,
-                    retryInterval: _createIndexRetryInterval);
+                    _ => resolver(),
+                    _createIndexLockWait);
             }
             finally
             {
