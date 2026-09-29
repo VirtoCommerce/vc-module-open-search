@@ -53,7 +53,7 @@ namespace VirtoCommerce.OpenSearch.Tests
             var loggerFactory = LoggerFactory.Create(builder => { builder.ClearProviders(); });
             var logger = loggerFactory.CreateLogger<TestOpenSearchProvider>();
 
-            var provider = new TestOpenSearchProvider(searchOptions, GetSettingsManager(), client, new OpenSearchRequestBuilder(), logger, new PassThroughDistributedLockService());
+            var provider = new TestOpenSearchProvider(searchOptions, GetSettingsManager(), client, new OpenSearchRequestBuilder(), logger, new PassThroughDistributedLock());
 
             return provider;
         }
@@ -70,8 +70,8 @@ namespace VirtoCommerce.OpenSearch.Tests
                 IOpenSearchClient client,
                 OpenSearchRequestBuilder requestBuilder,
                 ILogger<TestOpenSearchProvider> logger,
-                IDistributedLockService distributedLockService)
-                : base(searchOptions, settingsManager, client, requestBuilder, logger, distributedLockService)
+                IDistributedLock distributedLock)
+                : base(searchOptions, settingsManager, client, requestBuilder, logger, distributedLock)
             {
             }
 

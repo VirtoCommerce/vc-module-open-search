@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using OpenSearch.Client;
 using VirtoCommerce.OpenSearch.Data;
+using VirtoCommerce.Platform.Core.DistributedLock;
 using VirtoCommerce.Platform.Core.Settings;
 using VirtoCommerce.SearchModule.Core.Model;
 using Xunit;
@@ -61,19 +62,34 @@ namespace VirtoCommerce.OpenSearch.Tests
             indexStore.CreatedIndexCount.Should().Be(1);
         }
 
+        [Fact]
+        public async Task InternalCreateIndexWithLockAsync_LocksTheIndexForTenSeconds()
+        {
+            // Arrange
+            var distributedLock = new PassThroughDistributedLock();
+            var provider = new TestOpenSearchProvider(new IndexStore(), distributedLock);
+
+            // Act
+            await provider.CallInternalCreateIndexWithLockAsync();
+
+            // Assert
+            distributedLock.Requests.Should().ContainSingle().Which.Should().Be(
+                ("OpenSearchProvider:CreateIndex:test-core-product", TimeSpan.FromSeconds(10)));
+        }
+
         private sealed class TestOpenSearchProvider : OpenSearchProvider
         {
             public const string DocumentType = "Product";
             private readonly IndexStore _indexStore;
 
-            public TestOpenSearchProvider(IndexStore indexStore)
+            public TestOpenSearchProvider(IndexStore indexStore, IDistributedLock distributedLock = null)
                 : base(
                     Options.Create(new SearchOptions { Scope = "test-core", Provider = "OpenSearch" }),
                     Mock.Of<ISettingsManager>(),
                     new OpenSearchClient(new Uri("http://localhost:9200")),
                     new OpenSearchRequestBuilder(),
                     NullLogger<OpenSearchProvider>.Instance,
-                    new PassThroughDistributedLockService())
+                    distributedLock ?? new PassThroughDistributedLock())
             {
                 _indexStore = indexStore;
             }
