@@ -781,6 +781,12 @@ namespace VirtoCommerce.OpenSearch.Data
         {
             var mappingResponse = await Client.Indices.GetMappingAsync(new GetMappingRequest(indexName));
 
+            if (!mappingResponse.IsValid)
+            {
+                ThrowException($"Mapping load failed for index: {indexName}. {mappingResponse.DebugInformation}",
+                    mappingResponse.OriginalException);
+            }
+
             var mapping = mappingResponse.GetMappingFor(indexName) ??
                           mappingResponse.Indices.Values.FirstOrDefault()?.Mappings;
 
